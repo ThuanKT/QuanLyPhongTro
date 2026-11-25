@@ -8,7 +8,7 @@ import javax.swing.*;
 import java.awt.*;
 
 public class FormPhongDialog extends JDialog {
-    private JTextField txtMaPhong, txtTenPhong, txtGiaThue;
+    private JTextField txtMaPhong, txtTenPhong, txtLoaiPhong, txtGiaThue;
     private JComboBox<String> cbTrangThai;
     private TrangChuFrame parentFrame;
     private PhongTro phongCu;
@@ -18,9 +18,9 @@ public class FormPhongDialog extends JDialog {
         this.parentFrame = parent;
         this.phongCu = pt;
 
-        setSize(380, 250);
+        setSize(400, 290);
         setLocationRelativeTo(parent);
-        setLayout(new GridLayout(5, 2, 10, 10));
+        setLayout(new GridLayout(6, 2, 10, 10));
 
         add(new JLabel("  Mã phòng:"));
         txtMaPhong = new JTextField();
@@ -30,25 +30,30 @@ public class FormPhongDialog extends JDialog {
         txtTenPhong = new JTextField();
         add(txtTenPhong);
 
-        add(new JLabel("  Giá thuê:"));
+        add(new JLabel("  Loại phòng:"));
+        txtLoaiPhong = new JTextField("Phòng đơn khép kín");
+        add(txtLoaiPhong);
+
+        add(new JLabel("  Giá thuê cơ bản:"));
         txtGiaThue = new JTextField();
         add(txtGiaThue);
 
         add(new JLabel("  Trạng thái:"));
-        String[] cacTrangThai = {"Trống", "Đã thuê", "Đang sửa chữa"};
+        // Chuẩn theo Biểu đồ trạng thái 2.6.1 của báo cáo
+        String[] cacTrangThai = {"Trống", "Đang thuê", "Đang sửa"};
         cbTrangThai = new JComboBox<>(cacTrangThai);
         add(cbTrangThai);
 
-        JLabel lblTrong = new JLabel("");
+        add(new JLabel(""));
         JButton btnLuu = new JButton("Lưu thông tin");
-        add(lblTrong);
         add(btnLuu);
 
         if (phongCu != null) {
             txtMaPhong.setText(phongCu.getMaPhong());
             txtMaPhong.setEditable(false);
             txtTenPhong.setText(phongCu.getTenPhong());
-            txtGiaThue.setText(String.valueOf(phongCu.getGiaThue()));
+            txtLoaiPhong.setText(phongCu.getLoaiPhong());
+            txtGiaThue.setText(String.valueOf(phongCu.getGiaThueCoBan()));
             cbTrangThai.setSelectedItem(phongCu.getTrangThai());
         }
 
@@ -56,46 +61,34 @@ public class FormPhongDialog extends JDialog {
             try {
                 String ma = txtMaPhong.getText().trim();
                 String ten = txtTenPhong.getText().trim();
+                String loai = txtLoaiPhong.getText().trim();
                 String giaStr = txtGiaThue.getText().trim();
                 String trangThai = (String) cbTrangThai.getSelectedItem();
 
-                if (ma.isEmpty()) throw new NgoaiLeNhapLieu("Mã phòng không được để trống!");
-                if (ten.isEmpty()) throw new NgoaiLeNhapLieu("Tên phòng không được để trống!");
-                if (giaStr.isEmpty()) throw new NgoaiLeNhapLieu("Giá thuê không được để trống!");
+                if (ma.isEmpty() || ten.isEmpty() || loai.isEmpty() || giaStr.isEmpty()) {
+                    throw new NgoaiLeNhapLieu("Vui lòng nhập đầy đủ thông tin phòng!");
+                }
 
                 double gia;
                 try {
                     gia = Double.parseDouble(giaStr);
-                    if (gia < 0) throw new NumberFormatException();
+                    if (gia <= 0) throw new NumberFormatException();
                 } catch (NumberFormatException ex) {
-                    throw new NgoaiLeNhapLieu("Giá tiền không hợp lệ! Vui lòng chỉ nhập số dương.");
+                    throw new NgoaiLeNhapLieu("Giá thuê phải là số dương!");
                 }
 
-                PhongTro phongMoi = new PhongTro(ma, ten, gia, trangThai);
+                PhongTro phongMoi = new PhongTro(ma, ten, loai, gia, trangThai);
+                boolean ok = (phongCu == null) ? PhongTroDAO.themPhong(phongMoi) : PhongTroDAO.suaPhong(phongMoi);
 
-                if (phongCu == null) {
-                    if (PhongTroDAO.themPhong(phongMoi)) {
-                        JOptionPane.showMessageDialog(this, "Thêm phòng thành công!");
-                    } else {
-                        JOptionPane.showMessageDialog(this, "Thêm thất bại (Trùng mã phòng hoặc lỗi SQL)!");
-                        return;
-                    }
+                if (ok) {
+                    JOptionPane.showMessageDialog(this, "Lưu thông tin phòng thành công!");
+                    parentFrame.taiToanBoDuLieu();
+                    dispose();
                 } else {
-                    if (PhongTroDAO.suaPhong(phongMoi)) {
-                        JOptionPane.showMessageDialog(this, "Cập nhật phòng thành công!");
-                    } else {
-                        JOptionPane.showMessageDialog(this, "Cập nhật thất bại!");
-                        return;
-                    }
+                    JOptionPane.showMessageDialog(this, "Thao tác thất bại (Kiểm tra trùng mã phòng)!");
                 }
-
-                parentFrame.taiDuLieuTuSQL();
-                dispose();
-
             } catch (NgoaiLeNhapLieu ex) {
                 JOptionPane.showMessageDialog(this, ex.getMessage(), "Lỗi nhập liệu", JOptionPane.ERROR_MESSAGE);
-            } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this, "Lỗi hệ thống: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
             }
         });
     }
