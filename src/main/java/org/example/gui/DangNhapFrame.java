@@ -9,18 +9,18 @@ import java.awt.*;
 
 public class DangNhapFrame extends JFrame {
     public DangNhapFrame() {
-        setTitle("Đăng nhập - Hệ thống Quản lý Khu Trọ");
+        setTitle("Đăng nhập - Hệ Thống Quản Lý Ký Túc Xá");
         setSize(450, 220);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLayout(new GridLayout(4, 2, 10, 10));
 
-        JLabel lblTaiKhoan = new JLabel(" Tài khoản (admin / khach):");
+        JLabel lblTaiKhoan = new JLabel(" Tài khoản (quanly / khach):");
         JTextField txtTaiKhoan = new JTextField("admin");
         JLabel lblMatKhau = new JLabel(" Mật khẩu (123456):");
         JPasswordField txtMatKhau = new JPasswordField("123456");
         JLabel lblNote = new JLabel(" Phân quyền hệ thống:");
-        JLabel lblRoleInfo = new JLabel(" ChuTro | KhachThue");
+        JLabel lblRoleInfo = new JLabel(" Quản lý KTX | KhachThue");
         lblRoleInfo.setForeground(Color.BLUE);
 
         JButton btnDangNhap = new JButton("Đăng nhập");

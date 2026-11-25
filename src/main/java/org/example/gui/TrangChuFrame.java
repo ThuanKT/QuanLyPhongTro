@@ -27,18 +27,18 @@ public class TrangChuFrame extends JFrame {
     // Nút duyệt xác nhận thanh toán của khách thuê (Tab 4)
     private JButton btnXacNhanKhachTT;
 
-    // Label thống kê (Dashboard Chủ trọ)
+    // Label thống kê (Dashboard Ban quản lý KTX)
     private JLabel lblTongPhong, lblPhongTrong, lblTyLeLapDay, lblDoanhThu, lblCongNo;
 
     public TrangChuFrame(TaiKhoan tk) {
         this.taiKhoanHienTai = tk;
-        setTitle("Hệ Thống Quản Lý Khu Trọ - Chủ trọ: " + tk.getHoTen());
+        setTitle("Hệ Thống Quản Lý Ký Túc Xá - Ban quản lý KTX: " + tk.getHoTen());
         setSize(1050, 650);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
 
         JTabbedPane tabbedPane = new JTabbedPane();
-        tabbedPane.addTab("1. Quản Lý Phòng Trọ", taoTabPhongTro());
+        tabbedPane.addTab("1. Quản Lý Phòng KTX", taoTabPhongTro());
         tabbedPane.addTab("2. Khách Thuê & Hợp Đồng", taoTabHopDong());
         tabbedPane.addTab("3. Điện Nước & IoT", taoTabDienNuoc());
         tabbedPane.addTab("4. Hóa Đơn & Thanh Toán", taoTabHoaDon());
@@ -52,7 +52,7 @@ public class TrangChuFrame extends JFrame {
         // Thanh trạng thái phía trên
         JPanel topBar = new JPanel(new BorderLayout());
         topBar.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
-        topBar.add(new JLabel("KHU NHÀ TRỌ TẬP TRUNG | Xin chào Chủ trọ: " + tk.getHoTen()), BorderLayout.WEST);
+        topBar.add(new JLabel("HỆ THỐNG QUẢN LÝ KÝ TÚC XÁ  | Xin chào Ban quản lý KTX: " + tk.getHoTen()), BorderLayout.WEST);
         JButton btnDangXuat = new JButton("Đăng xuất");
         btnDangXuat.addActionListener(e -> {
             dispose();
@@ -64,7 +64,7 @@ public class TrangChuFrame extends JFrame {
         taiToanBoDuLieu();
     }
 
-    // ==================== TAB 1: QUẢN LÝ PHÒNG TRỌ ====================
+    // ==================== TAB 1: QUẢN LÝ Phòng KTX ====================
     private JPanel taoTabPhongTro() {
         JPanel panel = new JPanel(new BorderLayout());
         modelPhong = new DefaultTableModel(new String[]{"Mã Phòng", "Tên Phòng", "Loại Phòng", "Giá Thuê Cơ Bản", "Trạng Thái"}, 0) {
@@ -414,7 +414,7 @@ public class TrangChuFrame extends JFrame {
         return panel;
     }
 
-    // ==================== TAB 5: BÁO CÁO & THỐNG KÊ (CHỦ TRỌ) ====================
+    // ==================== TAB 5: BÁO CÁO & THỐNG KÊ (Ban quản lý KTX) ====================
     private JPanel taoTabThongKe() {
         JPanel panel = new JPanel(new GridLayout(6, 1, 15, 15));
         panel.setBorder(BorderFactory.createEmptyBorder(30, 50, 30, 50));
@@ -422,7 +422,7 @@ public class TrangChuFrame extends JFrame {
         Font fTitle = new Font("Arial", Font.BOLD, 20);
         Font fStat = new Font("Arial", Font.PLAIN, 16);
 
-        JLabel lblHeader = new JLabel("BÁO CÁO TỔNG QUAN HOẠT ĐỘNG KHU TRỌ", SwingConstants.CENTER);
+        JLabel lblHeader = new JLabel("BÁO CÁO TỔNG QUAN HOẠT ĐỘNG KTX", SwingConstants.CENTER);
         lblHeader.setFont(fTitle);
         lblHeader.setForeground(new Color(0, 102, 204));
 
@@ -493,10 +493,10 @@ public class TrangChuFrame extends JFrame {
             }
         }
 
-        // Cập nhật số liệu tổng quan cho Chủ trọ
+        // Cập nhật số liệu tổng quan cho Ban quản lý KTX
         int tong = dsPhong.size();
         double tyLe = (tong == 0) ? 0 : ((double) soPhongThue / tong) * 100;
-        lblTongPhong.setText("• Tổng số phòng trong khu trọ: " + tong + " phòng");
+        lblTongPhong.setText("• Tổng số phòng trong ký túc xá: " + tong + " phòng");
         lblPhongTrong.setText("• Số phòng đang trống sẵn sàng cho thuê: " + soPhongTrong + " phòng");
         lblTyLeLapDay.setText(String.format("• Tỷ lệ lấp đầy phòng hiện tại: %.1f%% (%d/%d phòng đang thuê)", tyLe, soPhongThue, tong));
         lblDoanhThu.setText("• Tổng doanh thu thực tế đã thu được: " + df.format(tongDoanhThu));

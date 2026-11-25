@@ -28,9 +28,9 @@ public class KhachThueFrame extends JFrame {
 
     public KhachThueFrame(TaiKhoan tk) {
         this.taiKhoan = tk;
-        setTitle("Cổng Thông Tin Khách Thuê - " + tk.getHoTen());
-        setSize(950, 520);
-        setMinimumSize(new Dimension(780, 420));
+        setTitle("Cổng Thông Tin Khách Thuê Ký Túc Xá - " + tk.getHoTen());
+        setSize(980, 540);
+        setMinimumSize(new Dimension(800, 440));
         setLocationRelativeTo(null);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
 
@@ -45,9 +45,9 @@ public class KhachThueFrame extends JFrame {
 
         JPanel pnlSelectRoom = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
         pnlSelectRoom.setOpaque(false);
-        pnlSelectRoom.add(new JLabel("Chọn phòng của bạn:"));
+        pnlSelectRoom.add(new JLabel("Chọn phòng KTX của bạn:"));
         cbChonPhong = new JComboBox<>();
-        cbChonPhong.setPreferredSize(new Dimension(220, 28));
+        cbChonPhong.setPreferredSize(new Dimension(240, 28));
         pnlSelectRoom.add(cbChonPhong);
 
         JButton btnDangXuat = new JButton("Đăng xuất");
@@ -78,14 +78,22 @@ public class KhachThueFrame extends JFrame {
         tblHoaDon.setRowHeight(26);
         add(new JScrollPane(tblHoaDon), BorderLayout.CENTER);
 
-        // ==================== PANEL NÚT THANH TOÁN DƯỚI CÙNG ====================
+        // ==================== PANEL NÚT CHỨC NĂNG DƯỚI CÙNG ====================
         JPanel pnlBottom = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 10));
+
+        JButton btnChiTiet = new JButton("Xem Chi Tiết Hóa Đơn");
+        btnChiTiet.setBackground(new Color(41, 128, 185));
+        btnChiTiet.setForeground(Color.WHITE);
+        btnChiTiet.setFont(new Font("Arial", Font.BOLD, 13));
+
         JButton btnThanhToan = new JButton("Thanh Toán Hóa Đơn Đang Chọn");
         btnThanhToan.setBackground(new Color(39, 174, 96));
         btnThanhToan.setForeground(Color.WHITE);
         btnThanhToan.setFont(new Font("Arial", Font.BOLD, 13));
 
         JButton btnTaiLai = new JButton("Làm Mới Dữ Liệu");
+
+        pnlBottom.add(btnChiTiet);
         pnlBottom.add(btnThanhToan);
         pnlBottom.add(btnTaiLai);
         add(pnlBottom, BorderLayout.SOUTH);
@@ -93,11 +101,10 @@ public class KhachThueFrame extends JFrame {
         // Tải danh sách phòng vào ComboBox
         taiDanhSachPhong();
 
-        // Sự kiện đổi phòng / làm mới
+        // Sự kiện đổi phòng / làm mới / xem chi tiết / thanh toán
         cbChonPhong.addActionListener(e -> taiDuLieuTheoPhong());
         btnTaiLai.addActionListener(e -> taiDuLieuTheoPhong());
-
-        // ==================== SỰ KIỆN KHÁCH THANH TOÁN ====================
+        btnChiTiet.addActionListener(e -> xemChiTietHoaDon());
         btnThanhToan.addActionListener(e -> xuLyKhachThanhToan());
     }
 
@@ -160,7 +167,7 @@ public class KhachThueFrame extends JFrame {
                 dsHoaDonPhong.add(hd);
                 double conNo = hd.getTongTien() - hd.getDaThanhToan();
                 String trangThaiHienThi = "Chờ xác nhận".equalsIgnoreCase(hd.getTrangThaiThanhToan())
-                        ? "Chờ xác nhận của chủ"
+                        ? "Chờ quản lý xác nhận"
                         : hd.getTrangThaiThanhToan();
 
                 modelHoaDon.addRow(new Object[]{
@@ -179,6 +186,113 @@ public class KhachThueFrame extends JFrame {
         }
     }
 
+    // ==================== XEM CHI TIẾT HÓA ĐƠN (CHỈ SỐ ĐIỆN NƯỚC & KHOẢN PHÍ) ====================
+    private void xemChiTietHoaDon() {
+        int row = tblHoaDon.getSelectedRow();
+        if (row == -1) {
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn một hóa đơn trên bảng để xem chi tiết!");
+            return;
+        }
+
+        HoaDon hd = dsHoaDonPhong.get(row);
+        double conNo = Math.max(0, hd.getTongTien() - hd.getDaThanhToan());
+        String trangThaiHienThi = "Chờ xác nhận".equalsIgnoreCase(hd.getTrangThaiThanhToan())
+                ? "Chờ quản lý xác nhận"
+                : hd.getTrangThaiThanhToan();
+
+        // Truy vấn chỉ số điện nước chi tiết của phòng trong tháng đó
+        String thongTinDienNuoc = "   (Chưa có dữ liệu chốt chỉ số công tơ chi tiết)";
+        String sqlCS = "SELECT ChiSoDienCu, ChiSoDienMoi, ChiSoNuocCu, ChiSoNuocMoi, NgayGhi " +
+                "FROM ChiSoDienNuoc WHERE MaPhong = ? AND ThangNam = ?";
+        try (Connection c = DatabaseConnection.getConnection();
+             PreparedStatement ps = c.prepareStatement(sqlCS)) {
+            ps.setString(1, hd.getMaPhong());
+            ps.setString(2, hd.getThangNam());
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                double dCu = rs.getDouble("ChiSoDienCu");
+                double dMoi = rs.getDouble("ChiSoDienMoi");
+                double nCu = rs.getDouble("ChiSoNuocCu");
+                double nMoi = rs.getDouble("ChiSoNuocMoi");
+                double soDien = dMoi - dCu;
+                double soNuoc = nMoi - nCu;
+                double donGiaDien = (soDien > 0) ? (hd.getTienDien() / soDien) : 0;
+                double donGiaNuoc = (soNuoc > 0) ? (hd.getTienNuoc() / soNuoc) : 0;
+
+                thongTinDienNuoc = String.format(
+                        "   • Điện tiêu thụ: %.0f kWh (Chỉ số cũ: %.0f → Mới: %.0f | Đơn giá: %s/kWh)\n" +
+                                "   • Nước tiêu thụ: %.0f m³ (Chỉ số cũ: %.0f → Mới: %.0f | Đơn giá: %s/m³)\n" +
+                                "   • Ngày chốt số: %s",
+                        soDien, dCu, dMoi, df.format(donGiaDien),
+                        soNuoc, nCu, nMoi, df.format(donGiaNuoc),
+                        rs.getDate("NgayGhi") != null ? rs.getDate("NgayGhi").toString() : "Cuối kỳ"
+                );
+            }
+        } catch (Exception ignored) {}
+
+        // Truy vấn lịch sử giao dịch thanh toán của hóa đơn này
+        StringBuilder lichSuGD = new StringBuilder();
+        String sqlGD = "SELECT MaGiaoDich, NgayThanhToan, SoTienTra, HinhThuc FROM GiaoDichThanhToan WHERE MaHoaDon = ? ORDER BY NgayThanhToan DESC";
+        try (Connection c = DatabaseConnection.getConnection();
+             PreparedStatement ps = c.prepareStatement(sqlGD)) {
+            ps.setString(1, hd.getMaHoaDon());
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                lichSuGD.append(String.format("   - [%s] %s | Số tiền: %s | Hình thức: %s\n",
+                        rs.getString("MaGiaoDich"),
+                        rs.getTimestamp("NgayThanhToan"),
+                        df.format(rs.getDouble("SoTienTra")),
+                        rs.getString("HinhThuc")));
+            }
+        } catch (Exception ignored) {}
+        if (lichSuGD.length() == 0) {
+            lichSuGD.append("   (Chưa phát sinh giao dịch thanh toán nào)\n");
+        }
+
+        // Tạo nội dung phiếu chi tiết hiển thị trong hộp thoại
+        String noiDung = String.format(
+                "==================== PHIẾU CHI TIẾT HÓA ĐƠN KÝ TÚC XÁ ====================\n" +
+                        "Mã hóa đơn : %-15s | Phòng KTX : %s\n" +
+                        "Kỳ hóa đơn : Tháng %-10s | Trạng thái: %s\n" +
+                        "-----------------------------------------------------------------------------\n" +
+                        "1. CHI TIẾT CHỈ SỐ ĐIỆN & NƯỚC:\n%s\n\n" +
+                        "2. BẢNG KÊ CÁC KHOẢN PHÍ PHẢI ĐÓNG:\n" +
+                        "   • Tiền thuê phòng KTX cố định       : %s\n" +
+                        "   • Tiền điện sinh hoạt               : %s\n" +
+                        "   • Tiền nước sinh hoạt               : %s\n" +
+                        "   • Phí dịch vụ (Wifi, rác, vệ sinh)  : %s\n" +
+                        "   --------------------------------------------------------------------------\n" +
+                        "   => TỔNG CỘNG PHẢI THANH TOÁN        : %s\n" +
+                        "   => ĐÃ THANH TOÁN (ĐÃ DUYỆT)         : %s\n" +
+                        "   => SỐ TIỀN CÒN NỢ                   : %s\n" +
+                        "-----------------------------------------------------------------------------\n" +
+                        "3. LỊCH SỬ GIAO DỊCH THANH TOÁN:\n%s" +
+                        "=============================================================================",
+                hd.getMaHoaDon(), hd.getMaPhong(),
+                hd.getThangNam(), trangThaiHienThi,
+                thongTinDienNuoc,
+                df.format(hd.getTienPhong()),
+                df.format(hd.getTienDien()),
+                df.format(hd.getTienNuoc()),
+                df.format(hd.getPhiDichVu()),
+                df.format(hd.getTongTien()),
+                df.format(hd.getDaThanhToan()),
+                df.format(conNo),
+                lichSuGD.toString()
+        );
+
+        JTextArea txtChiTiet = new JTextArea(noiDung);
+        txtChiTiet.setFont(new Font("Monospaced", Font.PLAIN, 13));
+        txtChiTiet.setEditable(false);
+        txtChiTiet.setBackground(new Color(250, 250, 250));
+        txtChiTiet.setMargin(new Insets(10, 12, 10, 12));
+
+        JScrollPane scroll = new JScrollPane(txtChiTiet);
+        scroll.setPreferredSize(new Dimension(640, 420));
+
+        JOptionPane.showMessageDialog(this, scroll, "Chi Tiết Hóa Đơn " + hd.getMaHoaDon(), JOptionPane.INFORMATION_MESSAGE);
+    }
+
     private void xuLyKhachThanhToan() {
         int row = tblHoaDon.getSelectedRow();
         if (row == -1) {
@@ -192,7 +306,7 @@ public class KhachThueFrame extends JFrame {
             return;
         }
         if ("Chờ xác nhận".equalsIgnoreCase(hd.getTrangThaiThanhToan())) {
-            JOptionPane.showMessageDialog(this, "Hóa đơn " + hd.getMaHoaDon() + " đang chờ chủ trọ xác nhận thanh toán!");
+            JOptionPane.showMessageDialog(this, "Hóa đơn " + hd.getMaHoaDon() + " đang chờ quản lý KTX xác nhận thanh toán!");
             return;
         }
 
@@ -207,7 +321,7 @@ public class KhachThueFrame extends JFrame {
                 "Chọn hình thức thanh toán:", cbHinhThuc
         };
 
-        int opt = JOptionPane.showConfirmDialog(this, fields, "Thanh Toán Tiền Trọ Online", JOptionPane.OK_CANCEL_OPTION);
+        int opt = JOptionPane.showConfirmDialog(this, fields, "Thanh Toán Phí Ký Túc Xá Online", JOptionPane.OK_CANCEL_OPTION);
         if (opt == JOptionPane.OK_OPTION) {
             try {
                 double tienTra = Double.parseDouble(txtSoTien.getText().trim());
@@ -223,11 +337,10 @@ public class KhachThueFrame extends JFrame {
                 String maGD = "GD" + (System.currentTimeMillis() % 100000);
                 String hinhThuc = cbHinhThuc.getSelectedItem().toString();
 
-                // Gửi yêu cầu thanh toán -> Trạng thái chuyển sang "Chờ xác nhận"
                 if (NghiepVuDAO.guiYeuCauThanhToan(maGD, hd.getMaHoaDon(), tienTra, hinhThuc)) {
                     JOptionPane.showMessageDialog(this,
                             "Đã gửi xác nhận thanh toán " + df.format(tienTra) + " qua " + hinhThuc + "!\n" +
-                                    "Mã giao dịch: " + maGD + "\nTrạng thái hóa đơn đã chuyển sang: Chờ xác nhận của chủ.");
+                                    "Mã giao dịch: " + maGD + "\nTrạng thái hóa đơn đã chuyển sang: Chờ quản lý xác nhận.");
                     taiDuLieuTheoPhong();
                 } else {
                     JOptionPane.showMessageDialog(this, "Giao dịch thất bại, vui lòng thử lại!", "Lỗi", JOptionPane.ERROR_MESSAGE);
