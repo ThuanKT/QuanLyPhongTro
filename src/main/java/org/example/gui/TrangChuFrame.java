@@ -134,12 +134,12 @@ public class TrangChuFrame extends JFrame {
 
         btnLapHD.addActionListener(e -> {
             JTextField txtMaHD = new JTextField("HD0" + (dsHopDong.size() + 1));
-            JTextField txtMaPhong = new JTextField("P101");
-            JTextField txtMaKhach = new JTextField("KT0" + (dsHopDong.size() + 2));
+            JTextField txtMaPhong = new JTextField("");
+            JTextField txtMaKhach = new JTextField("KT0" + (dsHopDong.size() + 1));
             JTextField txtHoTen = new JTextField();
             JTextField txtCCCD = new JTextField();
             JTextField txtSDT = new JTextField();
-            JTextField txtQue = new JTextField("Hà Nội");
+            JTextField txtQue = new JTextField("");
             JTextField txtNgayBD = new JTextField("2026-11-25");
             JTextField txtNgayKT = new JTextField("2027-05-25");
             JTextField txtTienCoc = new JTextField("2000000");
