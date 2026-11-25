@@ -15,7 +15,7 @@ public class DangNhapFrame extends JFrame {
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLayout(new GridLayout(4, 2, 10, 10));
 
-        JLabel lblTaiKhoan = new JLabel(" Tài khoản (quanly / khach):");
+        JLabel lblTaiKhoan = new JLabel(" Tài khoản (admin / khach):");
         JTextField txtTaiKhoan = new JTextField("");
         JLabel lblMatKhau = new JLabel(" Mật khẩu (123456):");
         JPasswordField txtMatKhau = new JPasswordField("");
