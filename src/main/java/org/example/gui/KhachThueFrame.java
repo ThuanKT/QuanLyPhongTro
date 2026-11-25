@@ -50,9 +50,6 @@ public class KhachThueFrame extends JFrame {
         cbChonPhong.setPreferredSize(new Dimension(220, 28));
         pnlSelectRoom.add(cbChonPhong);
 
-        JButton btnXem = new JButton("Xem thông tin");
-        pnlSelectRoom.add(btnXem);
-
         JButton btnDangXuat = new JButton("Đăng xuất");
         btnDangXuat.addActionListener(e -> {
             dispose();
@@ -96,8 +93,7 @@ public class KhachThueFrame extends JFrame {
         // Tải danh sách phòng vào ComboBox
         taiDanhSachPhong();
 
-        // Sự kiện đổi phòng / xem thông tin / làm mới
-        btnXem.addActionListener(e -> taiDuLieuTheoPhong());
+        // Sự kiện đổi phòng / làm mới
         cbChonPhong.addActionListener(e -> taiDuLieuTheoPhong());
         btnTaiLai.addActionListener(e -> taiDuLieuTheoPhong());
 
@@ -112,7 +108,6 @@ public class KhachThueFrame extends JFrame {
             cbChonPhong.addItem(p.getMaPhong() + " - " + p.getTenPhong());
         }
         if (cbChonPhong.getItemCount() > 0) {
-            // Mặc định chọn P102 nếu có, hoặc phòng đầu tiên
             for (int i = 0; i < cbChonPhong.getItemCount(); i++) {
                 if (cbChonPhong.getItemAt(i).startsWith("P102")) {
                     cbChonPhong.setSelectedIndex(i);
@@ -164,6 +159,10 @@ public class KhachThueFrame extends JFrame {
             if (hd.getMaPhong().equalsIgnoreCase(maPhong)) {
                 dsHoaDonPhong.add(hd);
                 double conNo = hd.getTongTien() - hd.getDaThanhToan();
+                String trangThaiHienThi = "Chờ xác nhận".equalsIgnoreCase(hd.getTrangThaiThanhToan())
+                        ? "Chờ xác nhận của chủ"
+                        : hd.getTrangThaiThanhToan();
+
                 modelHoaDon.addRow(new Object[]{
                         hd.getMaHoaDon(),
                         hd.getThangNam(),
@@ -174,7 +173,7 @@ public class KhachThueFrame extends JFrame {
                         df.format(hd.getTongTien()),
                         df.format(hd.getDaThanhToan()),
                         df.format(Math.max(0, conNo)),
-                        hd.getTrangThaiThanhToan()
+                        trangThaiHienThi
                 });
             }
         }
@@ -190,6 +189,10 @@ public class KhachThueFrame extends JFrame {
         HoaDon hd = dsHoaDonPhong.get(row);
         if ("Đã thanh toán".equalsIgnoreCase(hd.getTrangThaiThanhToan())) {
             JOptionPane.showMessageDialog(this, "Hóa đơn " + hd.getMaHoaDon() + " đã được thanh toán đủ trước đó!");
+            return;
+        }
+        if ("Chờ xác nhận".equalsIgnoreCase(hd.getTrangThaiThanhToan())) {
+            JOptionPane.showMessageDialog(this, "Hóa đơn " + hd.getMaHoaDon() + " đang chờ chủ trọ xác nhận thanh toán!");
             return;
         }
 
@@ -220,12 +223,12 @@ public class KhachThueFrame extends JFrame {
                 String maGD = "GD" + (System.currentTimeMillis() % 100000);
                 String hinhThuc = cbHinhThuc.getSelectedItem().toString();
 
-                // Gọi chung hàm DAO của hệ thống -> Cập nhật thẳng vào SQL Server
-                if (NghiepVuDAO.ghiNhanThanhToan(maGD, hd.getMaHoaDon(), tienTra, hinhThuc)) {
+                // Gửi yêu cầu thanh toán -> Trạng thái chuyển sang "Chờ xác nhận"
+                if (NghiepVuDAO.guiYeuCauThanhToan(maGD, hd.getMaHoaDon(), tienTra, hinhThuc)) {
                     JOptionPane.showMessageDialog(this,
-                            "Thanh toán thành công " + df.format(tienTra) + " qua " + hinhThuc + "!\n" +
-                                    "Mã giao dịch: " + maGD + "\nHệ thống đã tự động cập nhật trạng thái hóa đơn cho Chủ trọ.");
-                    taiDuLieuTheoPhong(); // Làm mới bảng bên khách ngay lập tức
+                            "Đã gửi xác nhận thanh toán " + df.format(tienTra) + " qua " + hinhThuc + "!\n" +
+                                    "Mã giao dịch: " + maGD + "\nTrạng thái hóa đơn đã chuyển sang: Chờ xác nhận của chủ.");
+                    taiDuLieuTheoPhong();
                 } else {
                     JOptionPane.showMessageDialog(this, "Giao dịch thất bại, vui lòng thử lại!", "Lỗi", JOptionPane.ERROR_MESSAGE);
                 }

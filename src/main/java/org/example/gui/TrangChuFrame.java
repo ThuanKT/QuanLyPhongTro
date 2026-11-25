@@ -24,6 +24,9 @@ public class TrangChuFrame extends JFrame {
     private ArrayList<ChiSoDienNuoc> dsDienNuoc = new ArrayList<>();
     private ArrayList<HoaDon> dsHoaDon = new ArrayList<>();
 
+    // Nút duyệt xác nhận thanh toán của khách thuê (Tab 4)
+    private JButton btnXacNhanKhachTT;
+
     // Label thống kê (Dashboard Chủ trọ)
     private JLabel lblTongPhong, lblPhongTrong, lblTyLeLapDay, lblDoanhThu, lblCongNo;
 
@@ -40,6 +43,9 @@ public class TrangChuFrame extends JFrame {
         tabbedPane.addTab("3. Điện Nước & IoT", taoTabDienNuoc());
         tabbedPane.addTab("4. Hóa Đơn & Thanh Toán", taoTabHoaDon());
         tabbedPane.addTab("5. Báo Cáo & Thống Kê", taoTabThongKe());
+
+        // Tự động làm mới dữ liệu khi chuyển tab
+        tabbedPane.addChangeListener(e -> taiToanBoDuLieu());
 
         add(tabbedPane, BorderLayout.CENTER);
 
@@ -328,9 +334,19 @@ public class TrangChuFrame extends JFrame {
 
         JPanel pnlBtn = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 10));
         JButton btnLapHoaDon = new JButton("Tự Động Tính & Lập Hóa Đơn");
-        JButton btnThanhToan = new JButton("Ghi Nhận Thanh Toán");
 
-        pnlBtn.add(btnLapHoaDon); pnlBtn.add(btnThanhToan);
+        // Nút tự động hiện khi có khách thuê gửi thanh toán (trạng thái "Chờ xác nhận")
+        btnXacNhanKhachTT = new JButton("Chờ Xác Nhận (0)");
+        btnXacNhanKhachTT.setBackground(new Color(230, 126, 34));
+        btnXacNhanKhachTT.setForeground(Color.WHITE);
+        btnXacNhanKhachTT.setFont(new Font("Arial", Font.BOLD, 12));
+        btnXacNhanKhachTT.setVisible(false);
+
+        JButton btnTaiLai = new JButton("Tải Lại");
+
+        pnlBtn.add(btnLapHoaDon);
+        pnlBtn.add(btnXacNhanKhachTT);
+        pnlBtn.add(btnTaiLai);
         panel.add(pnlBtn, BorderLayout.SOUTH);
 
         btnLapHoaDon.addActionListener(e -> {
@@ -367,39 +383,34 @@ public class TrangChuFrame extends JFrame {
             }
         });
 
-        btnThanhToan.addActionListener(e -> {
+        // Duyệt xác nhận thanh toán do Khách thuê gửi lên
+        btnXacNhanKhachTT.addActionListener(e -> {
             int row = tblHoaDon.getSelectedRow();
-            if (row == -1) { JOptionPane.showMessageDialog(this, "Vui lòng chọn một hóa đơn trên bảng để thanh toán!"); return; }
-            HoaDon hd = dsHoaDon.get(row);
-            if ("Đã thanh toán".equals(hd.getTrangThaiThanhToan())) {
-                JOptionPane.showMessageDialog(this, "Hóa đơn này đã được thanh toán đủ!");
+            if (row == -1) {
+                JOptionPane.showMessageDialog(this, "Vui lòng chọn hóa đơn có trạng thái 'Chờ xác nhận' trên bảng!");
                 return;
             }
-            double conNo = hd.getTongTien() - hd.getDaThanhToan();
-            JTextField txtSoTien = new JTextField(String.valueOf(conNo));
-            JComboBox<String> cbHinhThuc = new JComboBox<>(new String[]{"Chuyển khoản", "Tiền mặt", "VietQR"});
+            HoaDon hd = dsHoaDon.get(row);
+            if (!"Chờ xác nhận".equalsIgnoreCase(hd.getTrangThaiThanhToan())) {
+                JOptionPane.showMessageDialog(this, "Hóa đơn " + hd.getMaHoaDon() + " không ở trạng thái Chờ xác nhận!");
+                return;
+            }
 
-            Object[] fields = {
-                    "Hóa đơn: " + hd.getMaHoaDon() + " | Còn nợ: " + df.format(conNo),
-                    "Số tiền khách trả:", txtSoTien,
-                    "Hình thức thanh toán:", cbHinhThuc
-            };
+            int confirm = JOptionPane.showConfirmDialog(this,
+                    "Xác nhận đã nhận được tiền thanh toán từ khách cho hóa đơn " + hd.getMaHoaDon() + " (Phòng " + hd.getMaPhong() + ")?",
+                    "Duyệt Thanh Toán Của Khách", JOptionPane.YES_NO_OPTION);
 
-            if (JOptionPane.showConfirmDialog(this, fields, "Ghi Nhận Thanh Toán", JOptionPane.OK_CANCEL_OPTION) == JOptionPane.OK_OPTION) {
-                try {
-                    double tienTra = Double.parseDouble(txtSoTien.getText().trim());
-                    if (tienTra <= 0) { JOptionPane.showMessageDialog(this, "Số tiền phải lớn hơn 0!"); return; }
-                    String maGD = "GD" + System.currentTimeMillis() % 100000;
-                    if (NghiepVuDAO.ghiNhanThanhToan(maGD, hd.getMaHoaDon(), tienTra, (String) cbHinhThuc.getSelectedItem())) {
-                        JOptionPane.showMessageDialog(this, "Ghi nhận giao dịch thanh toán thành công!");
-                        taiToanBoDuLieu();
-                    }
-                } catch (Exception ex) {
-                    JOptionPane.showMessageDialog(this, "Số tiền không hợp lệ!");
+            if (confirm == JOptionPane.YES_OPTION) {
+                if (NghiepVuDAO.chuTroXacNhanThanhToan(hd.getMaHoaDon())) {
+                    JOptionPane.showMessageDialog(this, "Đã xác nhận thanh toán thành công cho hóa đơn " + hd.getMaHoaDon() + "!");
+                    taiToanBoDuLieu();
+                } else {
+                    JOptionPane.showMessageDialog(this, "Lỗi xác nhận thanh toán!", "Lỗi", JOptionPane.ERROR_MESSAGE);
                 }
             }
         });
 
+        btnTaiLai.addActionListener(e -> taiToanBoDuLieu());
         return panel;
     }
 
@@ -458,7 +469,11 @@ public class TrangChuFrame extends JFrame {
 
         modelHoaDon.setRowCount(0);
         double tongDoanhThu = 0, tongCongNo = 0;
+        int soHoaDonChoXacNhan = 0;
         for (HoaDon hd : dsHoaDon) {
+            if ("Chờ xác nhận".equalsIgnoreCase(hd.getTrangThaiThanhToan())) {
+                soHoaDonChoXacNhan++;
+            }
             modelHoaDon.addRow(new Object[]{
                     hd.getMaHoaDon(), hd.getMaPhong(), hd.getThangNam(),
                     df.format(hd.getTienPhong()), df.format(hd.getTienDien()), df.format(hd.getTienNuoc()),
@@ -467,6 +482,15 @@ public class TrangChuFrame extends JFrame {
             });
             tongDoanhThu += hd.getDaThanhToan();
             tongCongNo += (hd.getTongTien() - hd.getDaThanhToan());
+        }
+
+        if (btnXacNhanKhachTT != null) {
+            if (soHoaDonChoXacNhan > 0) {
+                btnXacNhanKhachTT.setText("Chờ Xác Nhận (" + soHoaDonChoXacNhan + ")");
+                btnXacNhanKhachTT.setVisible(true);
+            } else {
+                btnXacNhanKhachTT.setVisible(false);
+            }
         }
 
         // Cập nhật số liệu tổng quan cho Chủ trọ

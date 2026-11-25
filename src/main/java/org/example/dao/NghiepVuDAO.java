@@ -251,4 +251,96 @@ public class NghiepVuDAO {
             }
         } catch (SQLException e) { return false; }
     }
+    // 1. Khách thuê bấm thanh toán -> Chuyển trạng thái hóa đơn thành "Chờ xác nhận" và lưu tạm số tiền khách báo đã chuyển
+    public static boolean guiYeuCauThanhToan(String maGD, String maHoaDon, double soTienGui, String hinhThuc) {
+        String sqlGD = "INSERT INTO GiaoDichThanhToan (MaGiaoDich, MaHoaDon, NgayThanhToan, SoTienTra, HinhThuc) VALUES (?, ?, GETDATE(), ?, ?)";
+        // Lưu tạm thông tin số tiền & hình thức chờ duyệt vào trạng thái hoặc cập nhật trạng thái hóa đơn
+        String sqlHD = "UPDATE HoaDon SET TrangThaiThanhToan = N'Chờ xác nhận' WHERE MaHoaDon = ?";
+        try (Connection c = DatabaseConnection.getConnection()) {
+            c.setAutoCommit(false);
+            try (PreparedStatement ps1 = c.prepareStatement(sqlGD);
+                 PreparedStatement ps2 = c.prepareStatement(sqlHD)) {
+                ps1.setString(1, maGD);
+                ps1.setString(2, maHoaDon);
+                ps1.setDouble(3, soTienGui);
+                ps1.setString(4, hinhThuc + " (Chờ duyệt)");
+                ps1.executeUpdate();
+
+                ps2.setString(1, maHoaDon);
+                ps2.executeUpdate();
+
+                c.commit();
+                return true;
+            } catch (Exception ex) {
+                c.rollback();
+                ex.printStackTrace();
+                return false;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    // 2. Chủ trọ bấm nút "Xác nhận thanh toán" -> Cộng số tiền khách gửi vào DaThanhToan và chốt trạng thái
+    public static boolean chuTroXacNhanThanhToan(String maHoaDon) {
+        String sqlLayGD = "SELECT TOP 1 MaGiaoDich, SoTienTra, HinhThuc FROM GiaoDichThanhToan " +
+                "WHERE MaHoaDon = ? AND HinhThuc LIKE N'%(Chờ duyệt)%' ORDER BY NgayThanhToan DESC";
+        String sqlLayHD = "SELECT TongTien, DaThanhToan FROM HoaDon WHERE MaHoaDon = ?";
+        String sqlCapNhatHD = "UPDATE HoaDon SET DaThanhToan = ?, TrangThaiThanhToan = ? WHERE MaHoaDon = ?";
+        String sqlCapNhatGD = "UPDATE GiaoDichThanhToan SET HinhThuc = REPLACE(HinhThuc, N' (Chờ duyệt)', N'') WHERE MaGiaoDich = ?";
+
+        try (Connection c = DatabaseConnection.getConnection()) {
+            c.setAutoCommit(false);
+            try {
+                String maGD = null;
+                double soTienKhachGui = 0;
+
+                try (PreparedStatement ps1 = c.prepareStatement(sqlLayGD)) {
+                    ps1.setString(1, maHoaDon);
+                    ResultSet rs1 = ps1.executeQuery();
+                    if (rs1.next()) {
+                        maGD = rs1.getString("MaGiaoDich");
+                        soTienKhachGui = rs1.getDouble("SoTienTra");
+                    }
+                }
+
+                if (maGD == null) return false;
+
+                double tongTien = 0, daTraCu = 0;
+                try (PreparedStatement ps2 = c.prepareStatement(sqlLayHD)) {
+                    ps2.setString(1, maHoaDon);
+                    ResultSet rs2 = ps2.executeQuery();
+                    if (rs2.next()) {
+                        tongTien = rs2.getDouble("TongTien");
+                        daTraCu = rs2.getDouble("DaThanhToan");
+                    }
+                }
+
+                double daTraMoi = daTraCu + soTienKhachGui;
+                String trangThaiMoi = (daTraMoi >= tongTien) ? "Đã thanh toán" : "Thanh toán một phần";
+
+                try (PreparedStatement ps3 = c.prepareStatement(sqlCapNhatHD);
+                     PreparedStatement ps4 = c.prepareStatement(sqlCapNhatGD)) {
+                    ps3.setDouble(1, daTraMoi);
+                    ps3.setString(2, trangThaiMoi);
+                    ps3.setString(3, maHoaDon);
+                    ps3.executeUpdate();
+
+                    ps4.setString(1, maGD);
+                    ps4.executeUpdate();
+                }
+
+                c.commit();
+                return true;
+            } catch (Exception ex) {
+                c.rollback();
+                ex.printStackTrace();
+                return false;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
 }
