@@ -29,7 +29,7 @@ public class TrangChuFrame extends JFrame {
 
     public TrangChuFrame(TaiKhoan tk) {
         this.taiKhoanHienTai = tk;
-        setTitle("Hệ Thống Quản Lý Khu Trọ - Người dùng: " + tk.getHoTen() + " [" + tk.getVaiTro() + "]");
+        setTitle("Hệ Thống Quản Lý Khu Trọ - Chủ trọ: " + tk.getHoTen());
         setSize(1050, 650);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
@@ -39,18 +39,14 @@ public class TrangChuFrame extends JFrame {
         tabbedPane.addTab("2. Khách Thuê & Hợp Đồng", taoTabHopDong());
         tabbedPane.addTab("3. Điện Nước & IoT", taoTabDienNuoc());
         tabbedPane.addTab("4. Hóa Đơn & Thanh Toán", taoTabHoaDon());
-
-        // Phân quyền RBAC theo mục 2.1.1: Chỉ Chủ trọ (ChuTro) mới được xem Báo cáo & Thống kê
-        if ("ChuTro".equalsIgnoreCase(tk.getVaiTro())) {
-            tabbedPane.addTab("5. Báo Cáo & Thống Kê (Chủ Trọ)", taoTabThongKe());
-        }
+        tabbedPane.addTab("5. Báo Cáo & Thống Kê", taoTabThongKe());
 
         add(tabbedPane, BorderLayout.CENTER);
 
         // Thanh trạng thái phía trên
         JPanel topBar = new JPanel(new BorderLayout());
         topBar.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
-        topBar.add(new JLabel("KHU NHÀ TRỌ TẬP TRUNG | Xin chào: " + tk.getHoTen()), BorderLayout.WEST);
+        topBar.add(new JLabel("KHU NHÀ TRỌ TẬP TRUNG | Xin chào Chủ trọ: " + tk.getHoTen()), BorderLayout.WEST);
         JButton btnDangXuat = new JButton("Đăng xuất");
         btnDangXuat.addActionListener(e -> {
             dispose();
@@ -123,10 +119,11 @@ public class TrangChuFrame extends JFrame {
 
         JPanel pnlBtn = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 10));
         JButton btnLapHD = new JButton("Lập Hợp Đồng Thuê Mới");
+        JButton btnSuaHD = new JButton("Sửa / Gia Hạn HĐ");
         JButton btnThanhLy = new JButton("Thanh Lý / Trả Phòng");
         JButton btnCanhBao = new JButton("Kiểm Tra HĐ Sắp Hết Hạn");
 
-        pnlBtn.add(btnLapHD); pnlBtn.add(btnThanhLy); pnlBtn.add(btnCanhBao);
+        pnlBtn.add(btnLapHD); pnlBtn.add(btnSuaHD); pnlBtn.add(btnThanhLy); pnlBtn.add(btnCanhBao);
         panel.add(pnlBtn, BorderLayout.SOUTH);
 
         btnLapHD.addActionListener(e -> {
@@ -137,8 +134,8 @@ public class TrangChuFrame extends JFrame {
             JTextField txtCCCD = new JTextField();
             JTextField txtSDT = new JTextField();
             JTextField txtQue = new JTextField("Hà Nội");
-            JTextField txtNgayBD = new JTextField("2026-11-24");
-            JTextField txtNgayKT = new JTextField("2027-05-24");
+            JTextField txtNgayBD = new JTextField("2026-11-25");
+            JTextField txtNgayKT = new JTextField("2027-05-25");
             JTextField txtTienCoc = new JTextField("2000000");
 
             Object[] fields = {
@@ -164,24 +161,6 @@ public class TrangChuFrame extends JFrame {
                 }
             }
         });
-
-        btnThanhLy.addActionListener(e -> {
-            int row = tblHopDong.getSelectedRow();
-            if (row == -1) { JOptionPane.showMessageDialog(this, "Chọn hợp đồng cần thanh lý!"); return; }
-            HopDong hd = dsHopDong.get(row);
-            if (!"Hiệu lực".equals(hd.getTrangThai())) {
-                JOptionPane.showMessageDialog(this, "Hợp đồng này đã kết thúc trước đó!");
-                return;
-            }
-            if (JOptionPane.showConfirmDialog(this, "Thanh lý hợp đồng " + hd.getMaHopDong() + " và trả phòng " + hd.getMaPhong() + "?", "Xác nhận", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
-                if (NghiepVuDAO.thanhLyHopDong(hd.getMaHopDong(), hd.getMaPhong())) {
-                    JOptionPane.showMessageDialog(this, "Đã thanh lý hợp đồng! Phòng " + hd.getMaPhong() + " đã trở lại trạng thái 'Trống'.");
-                    taiToanBoDuLieu();
-                }
-            }
-        });
-        JButton btnSuaHD = new JButton("Sửa / Gia Hạn HĐ");
-        pnlBtn.add(btnSuaHD); // Thêm dòng này vào chỗ pnlBtn.add(...)
 
         btnSuaHD.addActionListener(e -> {
             int row = tblHopDong.getSelectedRow();
@@ -219,6 +198,22 @@ public class TrangChuFrame extends JFrame {
                     }
                 } catch (Exception ex) {
                     JOptionPane.showMessageDialog(this, "Dữ liệu ngày tháng (yyyy-MM-dd) hoặc tiền cọc không hợp lệ!");
+                }
+            }
+        });
+
+        btnThanhLy.addActionListener(e -> {
+            int row = tblHopDong.getSelectedRow();
+            if (row == -1) { JOptionPane.showMessageDialog(this, "Chọn hợp đồng cần thanh lý!"); return; }
+            HopDong hd = dsHopDong.get(row);
+            if (!"Hiệu lực".equals(hd.getTrangThai())) {
+                JOptionPane.showMessageDialog(this, "Hợp đồng này đã kết thúc trước đó!");
+                return;
+            }
+            if (JOptionPane.showConfirmDialog(this, "Thanh lý hợp đồng " + hd.getMaHopDong() + " và trả phòng " + hd.getMaPhong() + "?", "Xác nhận", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
+                if (NghiepVuDAO.thanhLyHopDong(hd.getMaHopDong(), hd.getMaPhong())) {
+                    JOptionPane.showMessageDialog(this, "Đã thanh lý hợp đồng! Phòng " + hd.getMaPhong() + " đã trở lại trạng thái 'Trống'.");
+                    taiToanBoDuLieu();
                 }
             }
         });
@@ -278,7 +273,6 @@ public class TrangChuFrame extends JFrame {
                     double nCu = Double.parseDouble(txtNuocCu.getText().trim());
                     double nMoi = Double.parseDouble(txtNuocMoi.getText().trim());
 
-                    // Kiểm tra ngoại lệ theo Biểu đồ trình tự 2.5.1
                     if (dMoi < dCu || nMoi < nCu) {
                         JOptionPane.showMessageDialog(this, "Cảnh báo lỗi: Chỉ số mới không được nhỏ hơn chỉ số cũ!", "Lỗi dữ liệu", JOptionPane.ERROR_MESSAGE);
                         return;
@@ -296,7 +290,6 @@ public class TrangChuFrame extends JFrame {
             }
         });
 
-        // Mô phỏng luồng IoT Receiver Service (Mục 2.5.1)
         btnThuThapIoT.addActionListener(e -> {
             String maPhong = JOptionPane.showInputDialog(this, "Nhập Mã Phòng cần đọc công tơ điện/nước IoT (VD: P102):");
             String thang = JOptionPane.showInputDialog(this, "Nhập kỳ tháng/năm (VD: 12/2026):");
@@ -340,7 +333,6 @@ public class TrangChuFrame extends JFrame {
         pnlBtn.add(btnLapHoaDon); pnlBtn.add(btnThanhToan);
         panel.add(pnlBtn, BorderLayout.SOUTH);
 
-        // Luồng 2.5.2: Tự động tính & lập hóa đơn
         btnLapHoaDon.addActionListener(e -> {
             JTextField txtMaHD = new JTextField("INV" + (dsHoaDon.size() + 1));
             JTextField txtPhong = new JTextField("P102");
@@ -375,7 +367,6 @@ public class TrangChuFrame extends JFrame {
             }
         });
 
-        // Luồng 2.5.3: Ghi nhận thanh toán (Đủ hoặc Một phần)
         btnThanhToan.addActionListener(e -> {
             int row = tblHoaDon.getSelectedRow();
             if (row == -1) { JOptionPane.showMessageDialog(this, "Vui lòng chọn một hóa đơn trên bảng để thanh toán!"); return; }
@@ -478,15 +469,13 @@ public class TrangChuFrame extends JFrame {
             tongCongNo += (hd.getTongTien() - hd.getDaThanhToan());
         }
 
-        // Cập nhật số liệu nếu là Chủ trọ
-        if (lblTongPhong != null) {
-            int tong = dsPhong.size();
-            double tyLe = (tong == 0) ? 0 : ((double) soPhongThue / tong) * 100;
-            lblTongPhong.setText("• Tổng số phòng trong khu trọ: " + tong + " phòng");
-            lblPhongTrong.setText("• Số phòng đang trống sẵn sàng cho thuê: " + soPhongTrong + " phòng");
-            lblTyLeLapDay.setText(String.format("• Tỷ lệ lấp đầy phòng hiện tại: %.1f%% (%d/%d phòng đang thuê)", tyLe, soPhongThue, tong));
-            lblDoanhThu.setText("• Tổng doanh thu thực tế đã thu được: " + df.format(tongDoanhThu));
-            lblCongNo.setText("• Tổng công nợ chưa thanh toán: " + df.format(tongCongNo));
-        }
+        // Cập nhật số liệu tổng quan cho Chủ trọ
+        int tong = dsPhong.size();
+        double tyLe = (tong == 0) ? 0 : ((double) soPhongThue / tong) * 100;
+        lblTongPhong.setText("• Tổng số phòng trong khu trọ: " + tong + " phòng");
+        lblPhongTrong.setText("• Số phòng đang trống sẵn sàng cho thuê: " + soPhongTrong + " phòng");
+        lblTyLeLapDay.setText(String.format("• Tỷ lệ lấp đầy phòng hiện tại: %.1f%% (%d/%d phòng đang thuê)", tyLe, soPhongThue, tong));
+        lblDoanhThu.setText("• Tổng doanh thu thực tế đã thu được: " + df.format(tongDoanhThu));
+        lblCongNo.setText("• Tổng công nợ chưa thanh toán: " + df.format(tongCongNo));
     }
 }

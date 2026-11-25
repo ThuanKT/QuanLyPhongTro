@@ -15,12 +15,12 @@ public class DangNhapFrame extends JFrame {
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLayout(new GridLayout(4, 2, 10, 10));
 
-        JLabel lblTaiKhoan = new JLabel(" Tài khoản (admin / quanly / khach):");
+        JLabel lblTaiKhoan = new JLabel(" Tài khoản (admin / khach):");
         JTextField txtTaiKhoan = new JTextField("admin");
         JLabel lblMatKhau = new JLabel(" Mật khẩu (123456):");
         JPasswordField txtMatKhau = new JPasswordField("123456");
-        JLabel lblNote = new JLabel(" Phân quyền RBAC:");
-        JLabel lblRoleInfo = new JLabel(" ChuTro | QuanLy | KhachThue");
+        JLabel lblNote = new JLabel(" Phân quyền hệ thống:");
+        JLabel lblRoleInfo = new JLabel(" ChuTro | KhachThue");
         lblRoleInfo.setForeground(Color.BLUE);
 
         JButton btnDangNhap = new JButton("Đăng nhập");
