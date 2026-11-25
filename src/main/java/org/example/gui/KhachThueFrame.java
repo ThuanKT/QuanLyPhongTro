@@ -252,7 +252,7 @@ public class KhachThueFrame extends JFrame {
         // Tạo nội dung phiếu chi tiết hiển thị trong hộp thoại
         String noiDung = String.format(
                 "==================== PHIẾU CHI TIẾT HÓA ĐƠN KÝ TÚC XÁ ====================\n" +
-                        "Mã hóa đơn : %-15s | Phòng KTX : %s\n" +
+                        "Mã hóa đơn : %-16s | Phòng KTX : %s\n" +
                         "Kỳ hóa đơn : Tháng %-10s | Trạng thái: %s\n" +
                         "-----------------------------------------------------------------------------\n" +
                         "1. CHI TIẾT CHỈ SỐ ĐIỆN & NƯỚC:\n%s\n\n" +
