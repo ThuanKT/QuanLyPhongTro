@@ -259,12 +259,12 @@ public class TrangChuFrame extends JFrame {
 
         btnNhapTay.addActionListener(e -> {
             JTextField txtMaCS = new JTextField("CS0" + (dsDienNuoc.size() + 1));
-            JTextField txtPhong = new JTextField("P102");
-            JTextField txtThang = new JTextField("12/2026");
-            JTextField txtDienCu = new JTextField("1320");
-            JTextField txtDienMoi = new JTextField("1450");
-            JTextField txtNuocCu = new JTextField("52");
-            JTextField txtNuocMoi = new JTextField("60");
+            JTextField txtPhong = new JTextField("");
+            JTextField txtThang = new JTextField("");
+            JTextField txtDienCu = new JTextField("");
+            JTextField txtDienMoi = new JTextField("");
+            JTextField txtNuocCu = new JTextField("");
+            JTextField txtNuocMoi = new JTextField("");
 
             Object[] fields = {
                     "Mã Chỉ Số:", txtMaCS, "Mã Phòng:", txtPhong, "Tháng/Năm (MM/yyyy):", txtThang,
@@ -297,8 +297,8 @@ public class TrangChuFrame extends JFrame {
         });
 
         btnThuThapIoT.addActionListener(e -> {
-            String maPhong = JOptionPane.showInputDialog(this, "Nhập Mã Phòng cần đọc công tơ điện/nước IoT (VD: P102):");
-            String thang = JOptionPane.showInputDialog(this, "Nhập kỳ tháng/năm (VD: 12/2026):");
+            String maPhong = JOptionPane.showInputDialog(this, "Nhập Mã Phòng cần đọc công tơ điện/nước IoT:");
+            String thang = JOptionPane.showInputDialog(this, "Nhập kỳ tháng/năm :");
             if (maPhong != null && thang != null && !maPhong.trim().isEmpty()) {
                 Random rand = new Random();
                 double dienCu = 1320, nuocCu = 52;
@@ -351,11 +351,11 @@ public class TrangChuFrame extends JFrame {
 
         btnLapHoaDon.addActionListener(e -> {
             JTextField txtMaHD = new JTextField("INV" + (dsHoaDon.size() + 1));
-            JTextField txtPhong = new JTextField("P102");
-            JTextField txtThang = new JTextField("11/2026");
-            JTextField txtGiaDien = new JTextField("3500");
-            JTextField txtGiaNuoc = new JTextField("20000");
-            JTextField txtDichVu = new JTextField("150000");
+            JTextField txtPhong = new JTextField("");
+            JTextField txtThang = new JTextField("");
+            JTextField txtGiaDien = new JTextField("");
+            JTextField txtGiaNuoc = new JTextField("");
+            JTextField txtDichVu = new JTextField("");
 
             Object[] fields = {
                     "Mã Hóa Đơn:", txtMaHD, "Mã Phòng:", txtPhong, "Tháng/Năm:", txtThang,
